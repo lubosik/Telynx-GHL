@@ -20,7 +20,7 @@ function getDashboardData() {
 
 router.get("/", (req, res) => {
   const html = fs.readFileSync(dashboardPath, "utf8");
-  res.type("html").send(html.replace("__DASHBOARD_DATA__", JSON.stringify(getDashboardData())));
+  res.type("html").send(html.replace("__DASHBOARD_DATA_JSON__", JSON.stringify(getDashboardData())));
 });
 
 router.get("/dashboard.json", (req, res) => {
@@ -28,4 +28,3 @@ router.get("/dashboard.json", (req, res) => {
 });
 
 module.exports = router;
-
