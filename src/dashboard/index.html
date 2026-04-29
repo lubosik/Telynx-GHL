@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Telnyx GHL SMS Bridge</title>
+    <style>
+      :root {
+        --bg: #f5f1e8;
+        --ink: #1f271b;
+        --muted: #66705f;
+        --card: #fffaf0;
+        --line: #ded5c2;
+        --green: #21854f;
+        --red: #b94235;
+        --blue: #255a7a;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--ink);
+        font-family: Georgia, "Times New Roman", serif;
+        background:
+          radial-gradient(circle at 12% 18%, rgba(33, 133, 79, 0.14), transparent 30rem),
+          radial-gradient(circle at 88% 10%, rgba(37, 90, 122, 0.16), transparent 26rem),
+          linear-gradient(135deg, #f8f0dd, var(--bg));
+      }
+
+      main {
+        width: min(1100px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 44px 0;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: 1.3fr 0.7fr;
+        gap: 24px;
+        align-items: stretch;
+      }
+
+      .card {
+        background: rgba(255, 250, 240, 0.88);
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        box-shadow: 0 24px 70px rgba(69, 54, 30, 0.12);
+        padding: 28px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(2.2rem, 5vw, 4.8rem);
+        line-height: 0.92;
+        letter-spacing: -0.05em;
+      }
+
+      h2 {
+        margin: 0 0 18px;
+        font-size: 1.1rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      p {
+        color: var(--muted);
+        font-size: 1.05rem;
+        line-height: 1.55;
+      }
+
+      .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 22px;
+        padding: 10px 14px;
+        border-radius: 999px;
+        background: #ecf7ef;
+        color: var(--green);
+        font-weight: 700;
+      }
+
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: currentColor;
+        box-shadow: 0 0 0 6px rgba(33, 133, 79, 0.12);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+        margin-top: 20px;
+      }
+
+      .metric {
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.42);
+      }
+
+      .label {
+        color: var(--muted);
+        font-size: 0.78rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .value {
+        margin-top: 8px;
+        overflow-wrap: anywhere;
+        font-family: "Courier New", monospace;
+        font-size: 0.95rem;
+      }
+
+      .config {
+        display: grid;
+        gap: 10px;
+      }
+
+      .config-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .pill {
+        border-radius: 999px;
+        padding: 4px 10px;
+        color: white;
+        font: 700 0.74rem "Courier New", monospace;
+      }
+
+      .pill.ok {
+        background: var(--green);
+      }
+
+      .pill.missing {
+        background: var(--red);
+      }
+
+      .messages {
+        margin-top: 24px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        padding: 14px 10px;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        color: var(--muted);
+        font-size: 0.76rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      td {
+        font-size: 0.95rem;
+      }
+
+      .dir {
+        display: inline-block;
+        min-width: 42px;
+        border-radius: 999px;
+        padding: 5px 8px;
+        text-align: center;
+        color: white;
+        font: 700 0.75rem "Courier New", monospace;
+      }
+
+      .dir.in {
+        background: var(--blue);
+      }
+
+      .dir.out {
+        background: var(--green);
+      }
+
+      .empty {
+        padding: 34px;
+        color: var(--muted);
+        text-align: center;
+      }
+
+      @media (max-width: 820px) {
+        .hero,
+        .grid {
+          grid-template-columns: 1fr;
+        }
+
+        th:nth-child(3),
+        td:nth-child(3) {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="hero">
+        <div class="card">
+          <h1>Telnyx to GHL SMS Bridge</h1>
+          <p>Webhook bridge for outbound workflow SMS and inbound replies into GoHighLevel Conversations.</p>
+          <div class="status"><span class="dot"></span><span id="bridge-status">Running</span></div>
+          <div class="grid">
+            <div class="metric">
+              <div class="label">Telnyx Number</div>
+              <div class="value" id="telnyx-number"></div>
+            </div>
+            <div class="metric">
+              <div class="label">GHL Location ID</div>
+              <div class="value" id="location-id"></div>
+            </div>
+            <div class="metric">
+              <div class="label">Uptime</div>
+              <div class="value" id="uptime"></div>
+            </div>
+            <div class="metric">
+              <div class="label">Message Log</div>
+              <div class="value" id="message-count"></div>
+            </div>
+          </div>
+        </div>
+        <aside class="card">
+          <h2>Config Status</h2>
+          <div class="config" id="config"></div>
+        </aside>
+      </section>
+
+      <section class="card messages">
+        <h2>Last 20 Messages</h2>
+        <div id="messages"></div>
+      </section>
+    </main>
+
+    <script>
+      window.__DASHBOARD_DATA__ = __DASHBOARD_DATA__;
+
+      function escapeHtml(value) {
+        return String(value || "").replace(/[&<>"']/g, function (char) {
+          return {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#039;"
+          }[char];
+        });
+      }
+
+      function render(data) {
+        document.getElementById("bridge-status").textContent = data.status === "ok" ? "Running" : "Needs Attention";
+        document.getElementById("telnyx-number").textContent = data.telnyxNumber || "Missing";
+        document.getElementById("location-id").textContent = data.locationId || "Missing";
+        document.getElementById("uptime").textContent = `${data.uptime}s`;
+        document.getElementById("message-count").textContent = `${data.messages.length} shown`;
+
+        document.getElementById("config").innerHTML = Object.entries(data.config)
+          .map(([key, ok]) => `
+            <div class="config-row">
+              <span>${escapeHtml(key)}</span>
+              <span class="pill ${ok ? "ok" : "missing"}">${ok ? "OK" : "MISSING"}</span>
+            </div>
+          `)
+          .join("");
+
+        if (!data.messages.length) {
+          document.getElementById("messages").innerHTML = '<div class="empty">No messages logged yet.</div>';
+          return;
+        }
+
+        document.getElementById("messages").innerHTML = `
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Dir</th>
+                <th>From</th>
+                <th>To</th>
+                <th>Preview</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${data.messages.map((message) => `
+                <tr>
+                  <td>${new Date(message.timestamp).toLocaleString()}</td>
+                  <td><span class="dir ${message.direction === "IN" ? "in" : "out"}">${escapeHtml(message.direction)}</span></td>
+                  <td>${escapeHtml(message.from)}</td>
+                  <td>${escapeHtml(message.to)}</td>
+                  <td>${escapeHtml(message.message).slice(0, 120)}${message.status === "error" ? `<br><small>${escapeHtml(message.error)}</small>` : ""}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        `;
+      }
+
+      render(window.__DASHBOARD_DATA__);
+    </script>
+  </body>
+</html>
+

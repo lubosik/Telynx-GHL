@@ -1,0 +1,54 @@
+const express = require("express");
+const { config } = require("../lib/config");
+const logger = require("../lib/logger");
+const { addMessage } = require("../lib/messageLog");
+const { sendSms } = require("../services/telnyx");
+
+const router = express.Router();
+
+function isAuthorized(req) {
+  if (!config.webhookSecret) return true;
+
+  const providedSecret = req.get("x-webhook-secret") || req.body?.webhookSecret || req.query?.secret;
+  return providedSecret === config.webhookSecret;
+}
+
+router.post("/send", async (req, res) => {
+  try {
+    if (!isAuthorized(req)) {
+      return res.status(401).json({ success: false, error: "Unauthorized webhook request" });
+    }
+
+    const { to, message, contactId } = req.body || {};
+
+    if (!to || !message) {
+      return res.status(400).json({ success: false, error: "Missing required fields: to, message" });
+    }
+
+    logger.log(`Outbound SMS requested for ${to}`);
+
+    const telnyxMessage = await sendSms({ to, message });
+    const messageId = telnyxMessage?.id || "";
+
+    addMessage({
+      direction: "OUT",
+      from: config.telnyx.phoneNumber,
+      to,
+      message,
+      providerId: messageId,
+      contactId
+    });
+
+    logger.log(`Outbound SMS sent to ${to}`, { messageId });
+
+    return res.json({ success: true, messageId });
+  } catch (err) {
+    const errorMessage = err?.response?.data?.errors?.[0]?.detail || err?.response?.data?.message || err.message || "Telnyx send failed";
+    logger.error("Outbound SMS failed", err);
+
+    return res.status(500).json({ success: false, error: errorMessage });
+  }
+});
+
+module.exports = router;
+
