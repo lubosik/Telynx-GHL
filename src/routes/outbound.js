@@ -13,15 +13,30 @@ function isAuthorized(req) {
   return providedSecret === config.webhookSecret;
 }
 
+function getOutboundPayload(body = {}) {
+  const customData = body.customData || body.custom_data || body.data?.customData || {};
+
+  return {
+    to: body.to || customData.to || body.phone || body.contact?.phone,
+    message: body.message || customData.message || body.text || customData.text,
+    contactId: body.contactId || body.contactID || customData.contactId || customData.contactID || body.contact?.id
+  };
+}
+
 router.post("/send", async (req, res) => {
   try {
     if (!isAuthorized(req)) {
       return res.status(401).json({ success: false, error: "Unauthorized webhook request" });
     }
 
-    const { to, message, contactId } = req.body || {};
+    const { to, message, contactId } = getOutboundPayload(req.body);
 
     if (!to || !message) {
+      logger.log("Outbound webhook missing required fields", {
+        bodyKeys: Object.keys(req.body || {}),
+        customDataKeys: Object.keys(req.body?.customData || req.body?.custom_data || {})
+      });
+
       return res.status(400).json({ success: false, error: "Missing required fields: to, message" });
     }
 
@@ -51,4 +66,3 @@ router.post("/send", async (req, res) => {
 });
 
 module.exports = router;
-
