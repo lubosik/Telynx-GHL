@@ -20,16 +20,16 @@ Create `.env` locally and add the same variables in Railway:
 
 ```env
 TELNYX_API_KEY=
-TELNYX_PHONE_NUMBER=
-TELNYX_MESSAGING_PROFILE_ID=
+TELNYX_PHONE_NUMBER=+13054043184
+TELNYX_MESSAGING_PROFILE_ID=40019dba-276f-4bc8-8046-8f013965e74c
 GHL_AGENCY_TOKEN=
-GHL_LOCATION_ID=
-GHL_COMPANY_ID=
+GHL_LOCATION_ID=K3zocv5e8VGH4dPBLmw2
+GHL_COMPANY_ID=LN2eDfFYbzohmmTOBSKN
 PORT=3000
 WEBHOOK_SECRET=
 ```
 
-`GHL_COMPANY_ID` is recommended because LeadConnector's `/oauth/locationToken` endpoint requires both `companyId` and `locationId`. If it is omitted, the app will try to infer it from `/oauth/installedLocations`.
+`GHL_COMPANY_ID` is recommended because LeadConnector's `/oauth/locationToken` endpoint requires both `companyId` and `locationId`. For Vici Peptides, the company ID is `LN2eDfFYbzohmmTOBSKN`. If it is omitted, the app will first try to infer it from `/locations/{locationId}`, then from `/oauth/installedLocations`.
 
 ## Deploy to Railway
 
@@ -43,7 +43,7 @@ WEBHOOK_SECRET=
 In Telnyx Mission Control, set the Messaging Profile inbound webhook URL to:
 
 ```text
-https://your-railway-url.railway.app/inbound
+https://telynx-ghl-production.up.railway.app/inbound
 ```
 
 Telnyx webhook payloads are read from `data.payload`, and this server always returns HTTP 200 for `/inbound` so Telnyx does not repeatedly retry bad payloads or internal processing errors.
@@ -53,7 +53,7 @@ Telnyx webhook payloads are read from `data.payload`, and this server always ret
 In the GoHighLevel workflow, add a Webhook action:
 
 ```text
-POST https://your-railway-url.railway.app/send
+POST https://telynx-ghl-production.up.railway.app/send
 Content-Type: application/json
 x-webhook-secret: your_WEBHOOK_SECRET_value
 ```
@@ -75,13 +75,13 @@ If `WEBHOOK_SECRET` is blank, `/send` will accept requests without the `x-webhoo
 Health check:
 
 ```bash
-curl https://your-railway-url.railway.app/health
+curl https://telynx-ghl-production.up.railway.app/health
 ```
 
 Outbound test:
 
 ```bash
-curl -X POST https://your-railway-url.railway.app/send \
+curl -X POST https://telynx-ghl-production.up.railway.app/send \
   -H "Content-Type: application/json" \
   -H "x-webhook-secret: your_WEBHOOK_SECRET_value" \
   -d '{"to":"+447XXXXXXXXX","message":"Test from bridge","contactId":"test"}'
@@ -111,4 +111,3 @@ Visit `/` to see bridge status, config status, and the latest 20 in-memory messa
 ## Important behavior
 
 This is a webhook bridge, not a native carrier integration. The Telnyx number will not appear in GHL Phone System settings. Inbound messages are posted into GHL Conversations through the API, and workflow outbound SMS must use a Webhook action pointed at `/send`, not GHL's native SMS action.
-

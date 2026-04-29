@@ -46,6 +46,22 @@ async function resolveCompanyId() {
   if (config.ghl.companyId) return config.ghl.companyId;
   if (tokenCache.companyId) return tokenCache.companyId;
 
+  try {
+    const response = await axios.get(`${GHL_API_BASE}/locations/${config.ghl.locationId}`, {
+      headers: baseHeaders(config.ghl.agencyToken),
+      timeout: 15000
+    });
+
+    const companyId = response.data?.location?.companyId || response.data?.companyId;
+
+    if (companyId) {
+      tokenCache.companyId = companyId;
+      return companyId;
+    }
+  } catch (err) {
+    logger.error("GHL location lookup failed while resolving companyId", err);
+  }
+
   const response = await axios.get(`${GHL_API_BASE}/oauth/installedLocations`, {
     headers: baseHeaders(config.ghl.agencyToken),
     timeout: 15000
