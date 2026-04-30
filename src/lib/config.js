@@ -6,6 +6,7 @@ const config = {
   telnyx: {
     apiKey: process.env.TELNYX_API_KEY || "",
     phoneNumber: process.env.TELNYX_PHONE_NUMBER || "",
+    alphanumericSenderId: process.env.TELNYX_ALPHANUMERIC_SENDER_ID || "",
     messagingProfileId: process.env.TELNYX_MESSAGING_PROFILE_ID || ""
   },
   ghl: {
@@ -19,6 +20,7 @@ function getConfigStatus() {
   return {
     telnyxApiKey: Boolean(config.telnyx.apiKey),
     telnyxPhoneNumber: Boolean(config.telnyx.phoneNumber),
+    telnyxAlphanumericSenderId: Boolean(config.telnyx.alphanumericSenderId),
     telnyxMessagingProfileId: Boolean(config.telnyx.messagingProfileId),
     ghlAgencyToken: Boolean(config.ghl.agencyToken),
     ghlLocationId: Boolean(config.ghl.locationId),
@@ -31,4 +33,3 @@ module.exports = {
   config,
   getConfigStatus
 };
-

@@ -2,7 +2,7 @@ const express = require("express");
 const { config } = require("../lib/config");
 const logger = require("../lib/logger");
 const { addMessage } = require("../lib/messageLog");
-const { sendSms } = require("../services/telnyx");
+const { getSenderForDestination, sendSms } = require("../services/telnyx");
 
 const router = express.Router();
 
@@ -42,13 +42,14 @@ router.post("/send", async (req, res) => {
 
     logger.log(`Outbound SMS requested for ${to}`);
 
+    const from = getSenderForDestination(to);
     const telnyxMessage = await sendSms({ to, message });
     const messageId = telnyxMessage?.id || "";
     const providerStatus = telnyxMessage?.to?.[0]?.status || telnyxMessage?.status || "accepted";
 
     addMessage({
       direction: "OUT",
-      from: config.telnyx.phoneNumber,
+      from,
       to,
       message,
       status: "submitted",
@@ -65,7 +66,7 @@ router.post("/send", async (req, res) => {
     const errorMessage = err?.response?.data?.errors?.[0]?.detail || err?.response?.data?.message || err.message || "Telnyx send failed";
     logger.error("Outbound SMS failed", err);
 
-    return res.status(500).json({ success: false, error: errorMessage });
+    return res.status(err.statusCode || 500).json({ success: false, error: errorMessage });
   }
 });
 
