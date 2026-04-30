@@ -40,13 +40,20 @@ WEBHOOK_SECRET=
 
 ## Configure Telnyx inbound webhook
 
-In Telnyx Mission Control, set the Messaging Profile inbound webhook URL to:
+In Telnyx Mission Control, set the Messaging Profile webhook URL to:
 
 ```text
 https://telynx-ghl-production.up.railway.app/inbound
 ```
 
 Telnyx webhook payloads are read from `data.payload`, and this server always returns HTTP 200 for `/inbound` so Telnyx does not repeatedly retry bad payloads or internal processing errors.
+
+The same endpoint handles inbound replies and outbound delivery events:
+
+- `message.received` logs inbound replies into GHL Conversations.
+- `message.sent`, `message.delivered`, and `message.finalized` update the dashboard row for the matching outbound Telnyx message ID.
+
+If GHL shows `{"success":true,"messageId":"..."}` but the handset never receives a text, check the dashboard or Telnyx Message Detail Records for that message ID. The GHL success response only means Telnyx accepted the API request; delivery can still fail later at the carrier.
 
 ## Configure GHL outbound workflow
 
@@ -106,8 +113,12 @@ curl -X POST http://localhost:3000/inbound \
 
 ## Dashboard
 
-Visit `/` to see bridge status, config status, and the latest 20 in-memory message events. The app keeps only the last 50 messages and does not persist data across restarts.
+Visit `/` to see bridge status, config status, and the latest 20 in-memory message events. Outbound rows include the Telnyx message ID, latest provider status, Telnyx event name, and any carrier/Telnyx error returned in a delivery webhook. The app keeps only the last 50 messages and does not persist data across restarts.
 
 ## Important behavior
 
 This is a webhook bridge, not a native carrier integration. The Telnyx number will not appear in GHL Phone System settings. Inbound messages are posted into GHL Conversations through the API, and workflow outbound SMS must use a Webhook action pointed at `/send`, not GHL's native SMS action.
+
+Telnyx sends SMS/MMS, not iMessage. iPhones may display received SMS inside the Messages app, but delivery is still carrier SMS delivery, not Apple's iMessage network.
+
+For outbound SMS from a US local long-code number to US recipients, 10DLC brand/campaign registration is required. If the sending number is not assigned to an approved 10DLC campaign, Telnyx/carriers can accept the API call and then block or fail delivery. UK destinations do not use US 10DLC, but international delivery can still be filtered or fail based on destination/carrier rules, account level, and number formatting.

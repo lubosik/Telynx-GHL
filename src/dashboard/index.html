@@ -295,6 +295,7 @@
                 <th>Dir</th>
                 <th>From</th>
                 <th>To</th>
+                <th>Status</th>
                 <th>Preview</th>
               </tr>
             </thead>
@@ -305,7 +306,12 @@
                   <td><span class="dir ${message.direction === "IN" ? "in" : "out"}">${escapeHtml(message.direction)}</span></td>
                   <td>${escapeHtml(message.from)}</td>
                   <td>${escapeHtml(message.to)}</td>
-                  <td>${escapeHtml(message.message).slice(0, 120)}${message.status === "error" ? `<br><small>${escapeHtml(message.error)}</small>` : ""}</td>
+                  <td>
+                    ${escapeHtml(message.providerStatus || message.status)}
+                    ${message.providerEvent ? `<br><small>${escapeHtml(message.providerEvent)}</small>` : ""}
+                    ${message.providerId ? `<br><small>${escapeHtml(message.providerId)}</small>` : ""}
+                  </td>
+                  <td>${escapeHtml(message.message).slice(0, 120)}${message.error ? `<br><small>${escapeHtml(message.error)}</small>` : ""}</td>
                 </tr>
               `).join("")}
             </tbody>

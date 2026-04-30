@@ -44,19 +44,23 @@ router.post("/send", async (req, res) => {
 
     const telnyxMessage = await sendSms({ to, message });
     const messageId = telnyxMessage?.id || "";
+    const providerStatus = telnyxMessage?.to?.[0]?.status || telnyxMessage?.status || "accepted";
 
     addMessage({
       direction: "OUT",
       from: config.telnyx.phoneNumber,
       to,
       message,
+      status: "submitted",
+      providerStatus,
+      providerEvent: "api.accepted",
       providerId: messageId,
       contactId
     });
 
-    logger.log(`Outbound SMS sent to ${to}`, { messageId });
+    logger.log(`Outbound SMS submitted to Telnyx for ${to}`, { messageId, providerStatus });
 
-    return res.json({ success: true, messageId });
+    return res.json({ success: true, messageId, status: providerStatus });
   } catch (err) {
     const errorMessage = err?.response?.data?.errors?.[0]?.detail || err?.response?.data?.message || err.message || "Telnyx send failed";
     logger.error("Outbound SMS failed", err);
