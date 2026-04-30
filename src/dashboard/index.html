@@ -237,6 +237,10 @@
               <div class="label">Message Log</div>
               <div class="value" id="message-count"></div>
             </div>
+            <div class="metric">
+              <div class="label">Duplicate Guard</div>
+              <div class="value" id="dedupe-status"></div>
+            </div>
           </div>
         </div>
         <aside class="card">
@@ -272,6 +276,7 @@
         document.getElementById("location-id").textContent = data.locationId || "Missing";
         document.getElementById("uptime").textContent = `${data.uptime}s`;
         document.getElementById("message-count").textContent = `${data.messages.length} shown`;
+        document.getElementById("dedupe-status").textContent = `${data.dedupe.entries} tracked / ${data.dedupe.windowMinutes} min`;
 
         document.getElementById("config").innerHTML = Object.entries(data.config)
           .map(([key, ok]) => `

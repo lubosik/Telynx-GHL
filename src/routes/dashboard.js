@@ -2,6 +2,7 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 const { config, getConfigStatus } = require("../lib/config");
+const { getDedupeStats } = require("../lib/dedupe");
 const { getMessages } = require("../lib/messageLog");
 
 const router = express.Router();
@@ -14,6 +15,7 @@ function getDashboardData() {
     telnyxNumber: config.telnyx.phoneNumber,
     locationId: config.ghl.locationId,
     config: getConfigStatus(),
+    dedupe: getDedupeStats(),
     messages: getMessages(20)
   };
 }
